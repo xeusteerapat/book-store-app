@@ -1,0 +1,40 @@
+service: book-store-api
+
+frameworkVersion: "2"
+
+plugins:
+  # - serverless-webpack WTF???
+  - serverless-appsync-plugin
+
+provider:
+  name: aws
+  runtime: nodejs14.x
+  stage: ${opt:stage, 'dev'}
+  region: ${opt:region, 'ap-southeast-1'}
+
+custom:
+  appSync:
+    name: book-store-api
+    authenticationType: AMAZON_COGNITO_USER_POOLS
+    additionalAuthenticationProviders:
+      - authenticationType: AWS_IAM
+    userPoolConfig:
+      awsRegion: ${opt:region, 'ap-southeast-1'}
+      defaultAction: ALLOW
+      userPoolId: !Ref cognitoUserPool
+    mappingTemplatesLocation: mapping-templates
+    mappingTemplates:
+      - type: Query
+        field: getBookById
+        dataSource: booksTable
+      - type: Mutation
+        field: createBook
+        dataSource: booksTable
+    dataSources:
+      - type: AMAZON_DYNAMODB
+        name: booksTable
+        config:
+          tableName: !Ref booksTable
+
+resources:
+  Resources: ${file(./resources.yml)}
